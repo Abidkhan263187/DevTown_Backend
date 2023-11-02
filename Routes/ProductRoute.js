@@ -1,32 +1,50 @@
-const {Router}=require('express');
+const { Router } = require('express');
 const { Product } = require('../Models/productModel');
 
-const productRoute=Router();
+const productRoute = Router();
 
 productRoute.get('/', async (req, res) => {
-    const { sortby, order, pageNo, limit,category } = req.query;
+    const { sortby, order, pageNo, limit, category, size, rating } = req.query;
 
+
+   
     const currPage = parseInt(pageNo || 1);
     const currLimit = parseInt(limit || 6);
     const skip = (currPage - 1) * currLimit;
+    
     try {
-        let list;
-        if (sortby && order!=="" && category) {
-           const ordering = order === 'asc' ? 1 : -1;
-            list = await Product.find({category:category}).sort({ [sortby]: ordering }).skip(skip).limit(currLimit)
-        }else if (sortby && order!=="" ) {
-            const ordering = order == 'asc' ? 1 : -1;
-             list = await Product.find().sort({ [sortby]: ordering }).skip(skip).limit(currLimit)
-         } 
-        else{
-            list = await Product.find(req.query).skip(skip).limit(currLimit)
-        }
-      
-        res.status(200).json({ mssg: "success", data: list })
-    } catch (error) {
-        res.status(501).json({ mssg: "error" })
-        console.log(error)
-    }
-})
+        let query = {};
 
-module.exports={productRoute}
+        if (category) {
+            query.category = category;
+        }
+
+        if (size) {
+            query.size = size;
+        }
+        if(rating){
+            query.rating={$gt:rating};
+        }
+            // find({rating:{$gt:rating}})
+        let list;
+        if (sortby && order !== "") {
+            const ordering = order === 'asc' ? 1 : -1;
+            list = await Product.find(query) //{cate:'men'}
+                .sort({ [sortby]: ordering })
+                .skip(skip)
+                .limit(currLimit);
+        } else {
+            list = await Product.find(query)
+                .skip(skip)
+                .limit(currLimit);
+        }
+
+        res.status(200).json({ mssg: "success", data: list });
+    } catch (error) {
+        res.status(500).json({ mssg: "error" });
+        console.log(error);
+    }
+});
+
+
+module.exports = { productRoute }
